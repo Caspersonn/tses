@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 BASE_DIR="$HOME/git"
-if [ "$1" = "--base" ]; then
+if [ "${1:-}" = "--base" ]; then
   BASE_DIR="$2"
   shift 2
 fi
 
-action="$1"
-arg_name="$2"
+action="${1:-}"
+arg_name="${2:-}"
 
 # -----------------------------------------------------------
 # Helper: list repos & show only last 2 path components
