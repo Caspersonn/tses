@@ -12,7 +12,7 @@ The flake SHALL expose `packages.<system>.default` that installs a `tses` execut
 
 ### Requirement: Runtime dependencies are hermetically wrapped
 
-The installed `tses` binary SHALL have all runtime dependencies (tmux, fzf, findutils, gawk, gnused, gnugrep, coreutils) available without relying on the user's system `PATH`.
+The installed `tses` binary SHALL have all runtime dependencies (tmux, fzf, fd, findutils, gawk, gnused, gnugrep, coreutils) available without relying on the user's system `PATH`.
 
 #### Scenario: Run on minimal system
 - **WHEN** `tses` is installed via Nix on a system that has none of the runtime deps in `PATH`

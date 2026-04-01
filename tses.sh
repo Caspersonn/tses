@@ -10,26 +10,40 @@ action="${1:-}"
 arg_name="${2:-}"
 
 # -----------------------------------------------------------
-# Helper: list repos & show only last 2 path components
+# Helper: find top-level repos (fd + dedup), return full paths
 # -----------------------------------------------------------
-list_repos() {
-  find "$BASE_DIR" -type d '(' -exec test -e '{}/.git' ';' -print -prune ')' 2>/dev/null \
-    | awk -F/ '
-      {
-        if (NF >= 2) {
-          print $(NF-1) "/" $NF
-        } else {
-          print $NF
+find_repos() {
+  fd --hidden --no-ignore --type d '^\.git$' "$BASE_DIR" 2>/dev/null \
+    | sed 's|/\.git/$||' \
+    | sort \
+    | awk '{
+        skip = 0
+        for (i = 1; i <= n; i++) {
+          if (substr($0, 1, length(repos[i]) + 1) == repos[i] "/") {
+            skip = 1; break
+          }
         }
+        if (!skip) { n++; repos[n] = $0; print $0 }
+      }'
+}
+
+# Helper: list repos & show only last 2 path components
+list_repos() {
+  find_repos | awk -F/ '
+    {
+      if (NF >= 2) {
+        print $(NF-1) "/" $NF
+      } else {
+        print $NF
       }
-    '
+    }
+  '
 }
 
 # Map displayed "parent/repo" back to full absolute path
 resolve_path() {
   local display="$1"
-  find "$BASE_DIR" -type d '(' -exec test -e '{}/.git' ';' -print -prune ')' 2>/dev/null \
-    | grep "${display}$" | head -n 1
+  find_repos | grep "${display}$" | head -n 1
 }
 
 # -----------------------------------------------------------

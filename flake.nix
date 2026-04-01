@@ -23,6 +23,7 @@
             runtimeInputs = with pkgs; [
               tmux
               fzf
+              fd
               findutils
               gawk
               gnused

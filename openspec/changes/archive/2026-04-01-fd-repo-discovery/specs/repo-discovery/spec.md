@@ -1,3 +1,5 @@
+## MODIFIED Requirements
+
 ### Requirement: Recursive repo discovery
 The system SHALL discover git repos at any depth under `BASE_DIR` by using `fd` to find `.git` directories, then deduplicating to retain only top-level repos.
 
