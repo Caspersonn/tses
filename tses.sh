@@ -13,8 +13,7 @@ arg_name="${2:-}"
 # Helper: list repos & show only last 2 path components
 # -----------------------------------------------------------
 list_repos() {
-  find "$BASE_DIR" -type d -maxdepth 3 -name .git 2>/dev/null \
-    | sed 's|/.git$||' \
+  find "$BASE_DIR" -type d '(' -exec test -e '{}/.git' ';' -print -prune ')' 2>/dev/null \
     | awk -F/ '
       {
         if (NF >= 2) {
@@ -29,9 +28,8 @@ list_repos() {
 # Map displayed "parent/repo" back to full absolute path
 resolve_path() {
   local display="$1"
-  find "$BASE_DIR" -type d -maxdepth 3 -name .git 2>/dev/null \
-    | sed 's|/.git$||' \
-    | grep "$display"$ | head -n 1
+  find "$BASE_DIR" -type d '(' -exec test -e '{}/.git' ';' -print -prune ')' 2>/dev/null \
+    | grep "${display}$" | head -n 1
 }
 
 # -----------------------------------------------------------
