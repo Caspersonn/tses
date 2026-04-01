@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-BASE_DIR="$HOME/git"   # change this
+BASE_DIR="$HOME/git"
+if [ "$1" = "--base" ]; then
+  BASE_DIR="$2"
+  shift 2
+fi
 
 action="$1"
 arg_name="$2"
@@ -101,5 +105,5 @@ fi
 # -----------------------------------------------------------
 # INVALID ARG
 # -----------------------------------------------------------
-echo "Usage: tmux-sessionizer {open [name] | kill [name]}"
+echo "Usage: tses [--base DIR] {open [name] | kill [name]}"
 exit 1

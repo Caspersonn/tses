@@ -1,20 +1,15 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Tmux session manager ("tses") — a single Bash script.
+  Tech: Bash, tmux, fzf, coreutils (find, sed, awk).
+  Scans ~/git for git repos (up to 3 levels deep) and lets the user
+  open a tmux session rooted in a repo or kill an existing session.
+  Two subcommands: `open [name]` and `kill [name]`.
+  Optional name arg for direct access; without it, fzf picker is shown.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+rules:
+  proposal:
+    - Keep proposals short; this is a small single-file CLI tool
+  tasks:
+    - Each task should be a single, testable shell change
