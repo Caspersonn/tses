@@ -232,6 +232,10 @@ if [ "$action" = "pull" ]; then
   GH_ORGS="$(gh api /user/orgs --jq '.[].login')"
   export GH_USER GH_ORGS BASE_DIR
 
+  # fzf runs subcommands via $SHELL — must be bash for export -f to work
+  SHELL="$(command -v bash)"
+  export SHELL
+
   # Export helpers so fzf subshells can call them
   export -f find_repos fetch_my_repos fetch_starred_repos fetch_org_repos fetch_recommended_repos
   export -f tses_pick_view tses_fetch_view tses_header_view
