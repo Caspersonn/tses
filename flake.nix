@@ -29,6 +29,8 @@
               gnused
               gnugrep
               coreutils
+              gitMinimal
+              gh
             ];
             text = scriptBody;
           };
