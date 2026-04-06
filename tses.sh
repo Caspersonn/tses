@@ -72,25 +72,54 @@ fetch_recommended_repos() {
   gh api "/users/$GH_USER/received_events" --jq '[.[] | select(.type=="WatchEvent" or .type=="ForkEvent") | .repo.name] | unique | .[]'
 }
 
+# Search GitHub repos by query (called via tses_search_or_noop)
+# shellcheck disable=SC2329
+fetch_search_repos() {
+  local query="${1:-}"
+  [ -z "$query" ] && return 0
+  gh api "/search/repositories?q=$(printf '%s' "$query" | jq -sRr @uri)&per_page=50" --jq '.items[].full_name'
+}
+
+# Called on every fzf change event — if in search mode, query API; otherwise re-cat cached browse data
+# shellcheck disable=SC2329
+tses_search_or_noop() {
+  local view
+  view="$(cat "$TSES_VIEW_FILE" 2>/dev/null)" || return 0
+  if [ "$view" = "Search GitHub" ]; then
+    fetch_search_repos "$1"
+  else
+    cat "$TSES_BROWSE_CACHE" 2>/dev/null || true
+  fi
+}
+
 # Pick a view (called via fzf execute — needs terminal for nested fzf)
 # Only writes view name to file; the actual fetch happens in reload
 # shellcheck disable=SC2329
 tses_pick_view() {
-  printf 'My repos\nStarred\nOrganizations\nRecommended' \
+  printf 'My repos\nStarred\nOrganizations\nRecommended\nSearch GitHub' \
     | fzf --prompt='View > ' > "$TSES_VIEW_FILE" || true
 }
 
 # Fetch repos for the selected view (called via fzf reload — fzf stays visible)
+# Browse views cache their output so tses_search_or_noop can re-cat it on change events
 # shellcheck disable=SC2329
 tses_fetch_view() {
   local view
   view="$(cat "$TSES_VIEW_FILE" 2>/dev/null)" || return 0
+  if [ "$view" = "Search GitHub" ]; then
+    # Return empty — user types to search; change event handles API calls
+    return 0
+  fi
+  # Browse views: fetch + cache
+  local results
   case "$view" in
-    'My repos')       fetch_my_repos;;
-    'Starred')        fetch_starred_repos;;
-    'Organizations')  fetch_org_repos;;
-    'Recommended')    fetch_recommended_repos;;
+    'My repos')       results="$(fetch_my_repos)";;
+    'Starred')        results="$(fetch_starred_repos)";;
+    'Organizations')  results="$(fetch_org_repos)";;
+    'Recommended')    results="$(fetch_recommended_repos)";;
   esac
+  printf '%s' "${results:-}" > "$TSES_BROWSE_CACHE"
+  printf '%s\n' "${results:-}"
 }
 
 # Return header text for the selected view (called via fzf transform-header)
@@ -103,6 +132,7 @@ tses_header_view() {
     'Starred')        echo "View: Starred | ctrl-/ to switch";;
     'Organizations')  echo "View: Organizations | ctrl-/ to switch";;
     'Recommended')    echo "View: Recommended | ctrl-/ to switch";;
+    'Search GitHub')  echo "View: Search GitHub | Type to search | ctrl-/ to switch";;
     *)                echo "ctrl-/ to switch view";;
   esac
 }
@@ -238,20 +268,28 @@ if [ "$action" = "pull" ]; then
 
   # Export helpers so fzf subshells can call them
   export -f find_repos fetch_my_repos fetch_starred_repos fetch_org_repos fetch_recommended_repos
+  export -f fetch_search_repos tses_search_or_noop
   export -f tses_pick_view tses_fetch_view tses_header_view
   export -f pick_destination tses_pull_select
 
-  # Temp file for view selection (picker writes name, reload/header read it)
+  # Temp files (view selection + browse cache for search/noop switching)
   TSES_VIEW_FILE="/tmp/tses-view-$$"
-  export TSES_VIEW_FILE
-  trap 'rm -f "$TSES_VIEW_FILE"' EXIT
+  TSES_BROWSE_CACHE="/tmp/tses-browse-$$"
+  export TSES_VIEW_FILE TSES_BROWSE_CACHE
+  trap 'rm -f "$TSES_VIEW_FILE" "$TSES_BROWSE_CACHE"' EXIT
 
   # Phase 1-3: repo browser → destination picker (seamless fzf-to-fzf via become)
   # become: replaces main fzf with tses_pull_select (which runs destination fzf)
-  RESULT="$(fetch_my_repos | fzf \
+  # Cache initial browse results so tses_search_or_noop can re-cat them
+  echo "My repos" > "$TSES_VIEW_FILE"
+  INITIAL_REPOS="$(fetch_my_repos)"
+  printf '%s' "$INITIAL_REPOS" > "$TSES_BROWSE_CACHE"
+  RESULT="$(printf '%s\n' "$INITIAL_REPOS" | fzf \
     --prompt='Repos > ' \
-    --header='ctrl-/ to switch view' \
+    --header='View: My repos | ctrl-/ to switch' \
+    --delay 300 \
     --bind "ctrl-/:execute(tses_pick_view)+reload(tses_fetch_view)+transform-header(tses_header_view)" \
+    --bind "change:reload(tses_search_or_noop {q})" \
     --bind "enter:become(tses_pull_select {})"
   )" || true
   [ -z "${RESULT:-}" ] && exit 0
