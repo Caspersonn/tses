@@ -12,8 +12,8 @@
 
 ## 3. fzf wiring
 
-- [x] 3.1 Add `--delay 300` to the main fzf invocation
-- [x] 3.2 Add `change:reload(tses_search_or_noop {q})` binding to the main fzf
+- [x] 3.1 Remove `--delay 300` from the main fzf invocation (this option doesn't exist in fzf)
+- [x] 3.2 Update `change:reload` binding to `change:reload(sleep 0.3; tses_search_or_noop {q})` to debounce API calls
 - [x] 3.3 Export new functions (`fetch_search_repos`, `tses_search_or_noop`)
 - [x] 3.4 Export `TSES_BROWSE_CACHE` env var and add cleanup to trap
 

@@ -26,13 +26,13 @@ fzf supports `enable-search` and `disable-search` actions. When the user picks "
 
 **Alternative considered**: Separate fzf instance for search — rejected because it breaks the seamless ctrl-/ switching and duplicates the select/clone flow.
 
-### Decision 2: Debounce via fzf `--delay`
+### Decision 2: Debounce via `sleep` in reload command
 
-fzf 0.49+ has `--delay <ms>` which delays `change` events. Set `--delay 300` to avoid hammering the API on every keystroke. This is simpler than shell-level debounce.
+fzf does not have a native `--delay` option. Instead, debounce by adding `sleep 0.3` at the start of the reload command: `change:reload(sleep 0.3; tses_search_or_noop {q})`. This delays reload execution by 300ms, preventing API spam while typing.
 
-However, `--delay` affects all views including browse views where it's unnecessary. This is acceptable — 300ms delay on local filtering is imperceptible since the data is already loaded.
+The sleep applies to all `change` events, including browse views where `tses_search_or_noop` is a no-op. Since browse views re-cat cached data (instant operation), the 300ms delay is imperceptible — fzf's local filter still responds immediately to keystrokes because filtering happens before the reload completes.
 
-**Alternative considered**: Shell-side sleep + PID tracking — fragile and complex for marginal benefit.
+**Alternative considered**: Per-view conditional binding/unbinding of `change` — overly complex given fzf's static binding model and the cache-based approach already handles browse views gracefully.
 
 ### Decision 3: `fetch_search_repos` helper
 

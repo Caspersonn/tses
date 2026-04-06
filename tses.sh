@@ -287,9 +287,8 @@ if [ "$action" = "pull" ]; then
   RESULT="$(printf '%s\n' "$INITIAL_REPOS" | fzf \
     --prompt='Repos > ' \
     --header='View: My repos | ctrl-/ to switch' \
-    --delay 300 \
     --bind "ctrl-/:execute(tses_pick_view)+reload(tses_fetch_view)+transform-header(tses_header_view)" \
-    --bind "change:reload(tses_search_or_noop {q})" \
+    --bind "change:reload(sleep 0.3; tses_search_or_noop {q})" \
     --bind "enter:become(tses_pull_select {})"
   )" || true
   [ -z "${RESULT:-}" ] && exit 0
